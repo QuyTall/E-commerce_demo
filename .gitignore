@@ -1,0 +1,18 @@
+# Dependencies
+/node_modules
+/backend/target/
+
+# Logs
+*.log
+
+# Environment variables and secrets
+# Nếu bạn dùng .env, .env.local để lưu key bí mật thật
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# IDE and OS files
+.idea/
+.vscode/
+Thumbs.db
