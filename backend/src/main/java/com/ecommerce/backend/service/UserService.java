@@ -6,7 +6,12 @@ import java.util.Optional;
 
 public interface UserService {
     User register(RegisterRequest request);
+    
     Optional<User> findByUsername(String username);
-    Optional<User> findById(Long id);  
+    
+    // 👇 THÊM DÒNG NÀY
+    Optional<User> findByUsernameOrEmail(String username, String email);
+    
+    Optional<User> findById(Long id);
     User getCurrentUser(String username);
 }

@@ -1,36 +1,47 @@
 package com.ecommerce.backend.controller;
 
-import com.ecommerce.backend.dto.response.ApiResponse;
-import com.ecommerce.backend.service.OrderService;
+import com.ecommerce.backend.entity.Order;
+import com.ecommerce.backend.entity.OrderItem;
+import com.ecommerce.backend.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class OrderController {
 
-    private final OrderService orderService;
+    private final OrderRepository orderRepository;
 
-    // Tạo session thanh toán Stripe
-    @PostMapping("/create-checkout-session")
-    public ApiResponse<Map<String, String>> createCheckoutSession(Authentication auth) throws Exception {
-        String url = orderService.createCheckoutSession(auth.getName());
-        Map<String, String> response = new HashMap<>();
-        response.put("checkoutUrl", url);
-        return ApiResponse.success(response, "Chuyển đến trang thanh toán Stripe");
+    // 1. KHÁCH HÀNG: Đặt hàng (Tạo đơn mới)
+    @PostMapping
+    public Order placeOrder(@RequestBody Order order) {
+        order.setStatus("PENDING"); // Mặc định là Chờ xử lý
+        
+        // Gán order cho từng item để lưu vào DB chuẩn
+        if (order.getItems() != null) {
+            for (OrderItem item : order.getItems()) {
+                item.setOrder(order);
+            }
+        }
+        return orderRepository.save(order);
     }
 
-    // Xác nhận thanh toán thành công (gọi từ frontend sau khi Stripe redirect)
-    @GetMapping("/confirm-payment")
-    public ApiResponse<Map<String, String>> confirmPayment(
-            @RequestParam("session_id") String sessionId,
-            Authentication auth) throws Exception {
-        Map<String, String> result = orderService.confirmPayment(sessionId, auth.getName());
-        return ApiResponse.success(result, "Thanh toán thành công!");
+    // 2. ADMIN: Xem tất cả đơn hàng
+    @GetMapping
+    public List<Order> getAllOrders() {
+        return orderRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    // 3. ADMIN: Cập nhật trạng thái (Duyệt đơn / Giao hàng)
+    @PutMapping("/{id}/status")
+    public Order updateStatus(@PathVariable Long id, @RequestBody String status) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(status);
+        return orderRepository.save(order);
     }
 }

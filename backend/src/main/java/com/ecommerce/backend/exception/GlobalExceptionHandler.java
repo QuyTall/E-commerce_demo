@@ -13,21 +13,25 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<String>> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request) {
-        return new ResponseEntity<>(ApiResponse.error(ex.getMessage()), HttpStatus.NOT_FOUND);
+        // Đã sửa: Thêm mã lỗi (404) vào hàm error
+        return new ResponseEntity<>(ApiResponse.error(HttpStatus.NOT_FOUND.value(), ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<String>> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
-        return new ResponseEntity<>(ApiResponse.error(ex.getMessage()), HttpStatus.BAD_REQUEST);
+        // Đã sửa: Thêm mã lỗi (400)
+        return new ResponseEntity<>(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<String>> handleDataIntegrityViolation(DataIntegrityViolationException ex, WebRequest request) {
-        return new ResponseEntity<>(ApiResponse.error("Invalid data: " + ex.getMostSpecificCause().getMessage()), HttpStatus.BAD_REQUEST);
+        // Đã sửa: Thêm mã lỗi (400)
+        return new ResponseEntity<>(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "Invalid data: " + ex.getMostSpecificCause().getMessage()), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<String>> handleGlobalException(Exception ex, WebRequest request) {
-        return new ResponseEntity<>(ApiResponse.error("Internal server error"), HttpStatus.INTERNAL_SERVER_ERROR);
+        // Đã sửa: Thêm mã lỗi (500)
+        return new ResponseEntity<>(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal server error: " + ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

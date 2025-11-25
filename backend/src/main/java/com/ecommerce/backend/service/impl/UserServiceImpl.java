@@ -47,6 +47,12 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUsername(username);
     }
 
+    // 👇 THÊM HÀM NÀY ĐỂ ĐĂNG NHẬP BẰNG EMAIL ĐƯỢC
+    @Override
+    public Optional<User> findByUsernameOrEmail(String username, String email) {
+        return userRepository.findByUsernameOrEmail(username, email);
+    }
+
     @Override
     public Optional<User> findById(Long id) {
         return userRepository.findById(id)

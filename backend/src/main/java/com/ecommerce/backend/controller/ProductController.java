@@ -1,53 +1,55 @@
 package com.ecommerce.backend.controller;
 
-import com.ecommerce.backend.dto.response.ApiResponse;
 import com.ecommerce.backend.entity.Product;
 import com.ecommerce.backend.service.ProductService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*") // Mở cửa cho mọi nơi truy cập
 public class ProductController {
 
     private final ProductService productService;
 
-    // ADD PRODUCT (ADMIN ONLY)
-    @PostMapping
-    public ApiResponse<Product> addProduct(@Valid @RequestBody Product product) {
-        return ApiResponse.success(productService.addProduct(product), "Product added successfully");
-    }
-
-    // GET ALL PRODUCTS (PAGINATION)
+    // 1. Lấy tất cả (Cho Admin và Shop)
     @GetMapping
-    public ApiResponse<Page<Product>> getAllProducts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<Product> products = productService.getAllProducts(PageRequest.of(page, size));
-        return ApiResponse.success(products, "Products retrieved successfully");
+    public List<Product> getAllProducts() {
+        return productService.getAllProducts();
     }
 
-    // GET PRODUCT BY ID
+    // 2. Lấy Top Trendy (Cho trang chủ)
+    @GetMapping("/trendy")
+    public List<Product> getTrendyProducts() {
+        return productService.getTrendyProducts();
+    }
+
+    // 3. Lấy chi tiết 1 cái
     @GetMapping("/{id}")
-    public ApiResponse<Product> getProductById(@PathVariable Long id) {
-        return ApiResponse.success(productService.getProductById(id), "Product retrieved successfully");
+    public Product getProductById(@PathVariable Long id) {
+        return productService.getProductById(id);
     }
 
-    // UPDATE PRODUCT (ADMIN ONLY)
+    // --- API DÀNH RIÊNG CHO ADMIN ---
+    
+    // 4. Thêm mới (CREATE)
+    @PostMapping
+    public Product addProduct(@RequestBody Product product) {
+        return productService.addProduct(product);
+    }
+
+    // 5. Cập nhật / Sửa chữa (UPDATE) - 👇 BẠN ĐANG THIẾU CÁI NÀY
     @PutMapping("/{id}")
-    public ApiResponse<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody Product product) {
-        return ApiResponse.success(productService.updateProduct(id, product), "Product updated successfully");
+    public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        return productService.updateProduct(id, product);
     }
 
-    // DELETE PRODUCT (ADMIN ONLY)
+    // 6. Xoá bỏ (DELETE)
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteProduct(@PathVariable Long id) {
+    public void deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
-        return ApiResponse.success(null, "Product deleted successfully");
     }
 }
