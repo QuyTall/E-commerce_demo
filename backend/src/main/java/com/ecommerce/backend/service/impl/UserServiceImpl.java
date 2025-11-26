@@ -47,7 +47,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUsername(username);
     }
 
-    // 👇 THÊM HÀM NÀY ĐỂ ĐĂNG NHẬP BẰNG EMAIL ĐƯỢC
+    // 🔥 FIX QUAN TRỌNG: Thêm tham số email vào hàm tìm kiếm
     @Override
     public Optional<User> findByUsernameOrEmail(String username, String email) {
         return userRepository.findByUsernameOrEmail(username, email);

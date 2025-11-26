@@ -5,7 +5,8 @@ import com.ecommerce.backend.service.impl.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // Đảm bảo import cái này
+import org.springframework.http.HttpMethod;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,25 +28,35 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> auth
-                        
-                        // 🔥 FIX 1: CHO PHÉP MỌI REQUEST OPTIONS ĐI QUA
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
-                        
-                        // 👇 FIX 2: MỞ KHÓA PROFILE VÀ GIỎ HÀNG CHO KHÁCH VÃNG LAI (GET & POST)
-                        .requestMatchers(HttpMethod.GET, "/api/user/profile").permitAll() // Cho phép GET profile (sẽ trả về null nếu chưa login)
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/products/**").permitAll()
-                        .requestMatchers("/api/category/**").permitAll()
-                        .requestMatchers("/api/brand/**").permitAll()
-                        .requestMatchers("/api/store/**").permitAll()
-                        .requestMatchers("/api/cart/**").permitAll() // Thao tác giỏ hàng (Guest/Anon)
-                        .requestMatchers("/api/orders/**").permitAll() 
 
-                        // Các trang Admin thì bắt buộc phải có ROLE_ADMIN
+                        // 🔥 Cho phép mọi request OPTIONS (CORS preflight)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Public API
+                        .requestMatchers("/api/auth/**",
+                                         "/api/products/**",
+                                         "/images/**",
+                                         "/error").permitAll()
+
+                        .requestMatchers("/api/category/**",
+                                         "/api/brand/**",
+                                         "/api/store/**").permitAll()
+
+                        // 🔥 Giỏ hàng + Đơn hàng mở (controller tự check)
+                        .requestMatchers("/api/cart/**").permitAll()
+                        .requestMatchers("/api/orders/**").permitAll()
+
+                        // Review yêu cầu đăng nhập
+                        .requestMatchers("/api/review/**").authenticated()
+
+                        // Admin
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
+                        // Mọi request khác yêu cầu đăng nhập
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)

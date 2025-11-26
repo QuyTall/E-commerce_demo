@@ -7,7 +7,8 @@ import com.ecommerce.backend.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException; // Nhớ import cái này
+import org.springframework.security.access.AccessDeniedException; // Cần import
+import org.springframework.http.HttpMethod; // Cần import
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class CartController {
 
     private final CartService cartService;
 
-    // 🔥 FIX LỖI: Hàm kiểm tra xem User có phải là "anonymousUser" không
+    // 🔥 FIX 1: Hàm kiểm tra User
     private void checkAuthentication(Authentication auth) {
         if (auth == null || auth.getName().equals("anonymousUser")) {
             // Ném lỗi 401/403 nếu không đăng nhập (thay vì để nó crash 500)
@@ -38,7 +39,7 @@ public class CartController {
     }
 
     // 2. POST /api/cart/add-to-cart (Thêm sản phẩm)
-    @PostMapping("/add-to-cart") // 🔥 FIX 2: Sửa endpoint cho khớp Frontend (Canim)
+    @PostMapping("/add-to-cart") // ✅ FIX 2: Endpoint khớp với Frontend
     public ApiResponse<CartResponse> addToCart(Authentication auth,
                                                @Valid @RequestBody AddToCartRequest request) {
         checkAuthentication(auth); // Bắt buộc đăng nhập

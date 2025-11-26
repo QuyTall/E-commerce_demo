@@ -2,6 +2,7 @@ package com.ecommerce.backend.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,30 +31,25 @@ public class JwtUtil {
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // 1. Tạo Token (Builder) - Sử dụng API mới
     public String generateToken(String username, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
-        
         return Jwts.builder()
-                .claims(claims) // Thay thế setClaims()
-                .subject(username) // Thay thế setSubject()
-                .issuedAt(new Date(System.currentTimeMillis())) // Thay thế setIssuedAt()
-                .expiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY)) // Thay thế setExpiration()
-                .signWith(signingKey) // API mới - không cần chỉ định algorithm
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // 2. Lấy thông tin từ Token - Sử dụng API mới
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(signingKey)
-                .build() // Thêm build() để tạo JwtParser
                 .parseClaimsJws(token)
                 .getBody();
     }
 
-    // 3. Lấy Username từ Token
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -63,13 +59,11 @@ public class JwtUtil {
         return claimsResolver.apply(claims);
     }
 
-    // 4. Kiểm tra Token còn hạn không
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    // 5. Kiểm tra thời hạn
     private Boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
