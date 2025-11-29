@@ -2,7 +2,7 @@ import Dashboard from "views/Dashboard.js";
 import UserProfile from "views/UserProfile.js";
 import TableList from "views/TableList.js";
 
-
+import UserList from "views/UserList.js";
 import Orders from "views/Orders.js";
 
 const dashboardRoutes = [
@@ -13,6 +13,7 @@ const dashboardRoutes = [
     component: Dashboard,
     layout: "/admin",
   },
+
   {
     path: "/user",
     name: "HỒ SƠ CÁ NHÂN",
@@ -20,6 +21,13 @@ const dashboardRoutes = [
     component: UserProfile,
     layout: "/admin",
   },
+  {
+    path: "/users",
+    name: "QUẢN LÝ USER",
+    icon: "nc-icon nc-single-02", // Icon người dùng
+    component: UserList,
+    layout: "/admin",
+},
   {
     path: "/table",
     name: "QUẢN LÝ SẢN PHẨM",
@@ -35,6 +43,7 @@ const dashboardRoutes = [
     component: Orders, 
     layout: "/admin",
   },
+  
 ];
 
 export default dashboardRoutes;

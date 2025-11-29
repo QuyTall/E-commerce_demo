@@ -1,214 +1,208 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-// 👇 Import thêm Form, Button để làm giao diện nhập liệu
 import { Card, Table, Container, Row, Col, Form, Button } from "react-bootstrap";
+import axios from "axios";
 
 function TableList() {
-  // 1. DANH SÁCH SẢN PHẨM
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState("ALL"); // Bộ lọc
   
-  // 2. TRẠNG THÁI FORM (Đang thêm hay đang sửa?)
-  const [isEditing, setIsEditing] = useState(false); 
-  const [currentId, setCurrentId] = useState(null);  
-
-  // 3. DỮ LIỆU TRONG FORM NHẬP
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentId, setCurrentId] = useState(null);
+  
   const [formData, setFormData] = useState({
-    name: "",
-    price: "",
-    stock: "",
-    brand: "",
-    image: "",
-    description: ""
+    name: "", price: "", stock: "", brand: "", category: "", image: "", description: ""
   });
 
-  // Lấy Token để chứng minh là Admin (Bắt buộc có cái này mới Sửa/Xoá được)
   const token = localStorage.getItem("token");
-  const authConfig = {
-    headers: { Authorization: `Bearer ${token}` }
-  };
+  const getAuthConfig = () => ({
+    headers: { 
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+    }
+  });
 
-  // --- CÁC HÀM LOGIC ---
-
-  // A. Tải danh sách từ Java về
+  // 1. LOAD DỮ LIỆU
   const loadProducts = () => {
     axios.get("http://localhost:8080/api/products")
-      .then((res) => setProducts(res.data))
+      .then((res) => {
+        setProducts(res.data);
+        setFilteredProducts(res.data); // Mặc định hiển thị hết
+      })
       .catch((err) => console.error("Lỗi load:", err));
   };
 
-  // Chạy ngay khi mở trang
+  useEffect(() => { loadProducts(); }, []);
+
+  // 2. XỬ LÝ LỌC DANH MỤC
   useEffect(() => {
-    loadProducts();
-  }, []);
+      if (categoryFilter === "ALL") {
+          setFilteredProducts(products);
+      } else {
+          setFilteredProducts(products.filter(p => p.category?.toLowerCase().includes(categoryFilter.toLowerCase())));
+      }
+  }, [categoryFilter, products]);
 
-  // B. Khi bạn gõ phím vào ô Input -> Cập nhật formData
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
-  // C. Khi bấm nút LƯU (Xanh lá hoặc Vàng)
-  const handleSave = (e) => {
+  // 3. CÁC HÀM XỬ LÝ FORM (Giữ nguyên logic cũ, chỉ thêm category)
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSave = async (e) => {
     e.preventDefault();
+    const payload = {
+        ...formData,
+        price: parseFloat(formData.price) || 0,
+        stock: parseInt(formData.stock) || 0
+    };
 
-    if (isEditing) {
-      // ---> NẾU ĐANG SỬA (GỌI PUT)
-      axios.put(`http://localhost:8080/api/products/${currentId}`, formData, authConfig)
-        .then(() => {
-          alert("Đã cập nhật thành công!");
-          resetForm();
-          loadProducts();
-        })
-        .catch((err) => alert("Lỗi cập nhật (Kiểm tra lại token)!"));
-    } else {
-      // ---> NẾU ĐANG THÊM MỚI (GỌI POST)
-      axios.post("http://localhost:8080/api/products", formData, authConfig)
-        .then(() => {
-          alert("Thêm mới thành công!");
-          resetForm();
-          loadProducts();
-        })
-        .catch((err) => alert("Lỗi thêm mới!"));
+    try {
+        if (isEditing) {
+            await axios.put(`http://localhost:8080/api/products/${currentId}`, payload, getAuthConfig());
+            alert("✅ Cập nhật thành công!");
+        } else {
+            await axios.post("http://localhost:8080/api/products", payload, getAuthConfig());
+            alert("✅ Thêm mới thành công!");
+        }
+        resetForm();
+        loadProducts();
+    } catch (err) {
+        alert("❌ Lỗi: " + (err.response?.data?.message || "Kiểm tra dữ liệu!"));
     }
   };
 
-  // D. Khi bấm nút SỬA (Màu cam) trên bảng
-  const handleEditClick = (product) => {
-    setIsEditing(true); // Bật chế độ sửa
-    setCurrentId(product.id || product._id);
-    // Đổ dữ liệu cũ lên Form
+  const handleDelete = async (id) => {
+    if (!window.confirm("Xóa sản phẩm này?")) return;
+    try {
+        await axios.delete(`http://localhost:8080/api/products/${id}`, getAuthConfig());
+        alert("🗑️ Đã xóa!");
+        loadProducts();
+    } catch (err) {
+        alert("❌ Lỗi xóa!");
+    }
+  };
+
+  const handleEditClick = (p) => {
+    setIsEditing(true);
+    setCurrentId(p.id || p._id);
     setFormData({
-      name: product.name,
-      price: product.price,
-      stock: product.stock || product.countInStock,
-      brand: product.brand || "",
-      image: product.image || "",
-      description: product.description || ""
+      name: p.name, price: p.price, stock: p.stock || 0,
+      brand: p.brand || "", category: p.category || "", 
+      image: p.image || "", description: p.description || ""
     });
-    // Cuộn lên đầu để sửa cho dễ
     window.scrollTo(0, 0);
   };
 
-  // E. Khi bấm nút XOÁ (Màu đỏ)
-  const handleDelete = (id) => {
-    if (window.confirm("Bạn chắc chắn muốn xoá sản phẩm này chứ?")) {
-      axios.delete(`http://localhost:8080/api/products/${id}`, authConfig)
-        .then(() => {
-          loadProducts(); // Load lại bảng để thấy nó mất đi
-        })
-        .catch(() => alert("Không thể xoá!"));
-    }
-  };
-
-  // F. Reset Form về ban đầu
   const resetForm = () => {
     setIsEditing(false);
     setCurrentId(null);
-    setFormData({ name: "", price: "", stock: "", brand: "", image: "", description: "" });
+    setFormData({ name: "", price: "", stock: "", brand: "", category: "", image: "", description: "" });
   };
 
   return (
     <Container fluid>
-      {/* --- PHẦN 1: FORM QUẢN LÝ --- */}
+      {/* FORM NHẬP LIỆU */}
       <Row>
         <Col md="12">
           <Card>
-            <Card.Header>
-              <Card.Title as="h4">
-                {isEditing ? `Đang Sửa Sản Phẩm ID: ${currentId}` : "Thêm Sản Phẩm Mới"}
-              </Card.Title>
-            </Card.Header>
+            <Card.Header><Card.Title as="h4">{isEditing ? "Sửa Sản Phẩm" : "Thêm Sản Phẩm"}</Card.Title></Card.Header>
             <Card.Body>
               <Form onSubmit={handleSave}>
                 <Row>
+                  <Col md="6"><Form.Group><label>Tên sản phẩm</label><Form.Control name="name" value={formData.name} onChange={handleChange} required /></Form.Group></Col>
+                  <Col md="3"><Form.Group><label>Giá ($)</label><Form.Control name="price" type="number" value={formData.price} onChange={handleChange} required /></Form.Group></Col>
+                  <Col md="3"><Form.Group><label>Kho</label><Form.Control name="stock" type="number" value={formData.stock} onChange={handleChange} /></Form.Group></Col>
+                </Row>
+                <Row>
+                  <Col md="4"><Form.Group><label>Thương hiệu</label><Form.Control name="brand" value={formData.brand} onChange={handleChange} /></Form.Group></Col>
+                  
+                  {/* 🔥 Ô NHẬP CATEGORY (Quan trọng để phân loại) */}
                   <Col md="4">
-                    <label>Tên sản phẩm</label>
-                    <Form.Control name="name" value={formData.name} onChange={handleChange} required />
+                    <Form.Group>
+                        <label>Danh mục (Áo, Quần, Giày...)</label>
+                        <Form.Control name="category" value={formData.category} onChange={handleChange} required placeholder="VD: Áo khoác" />
+                    </Form.Group>
                   </Col>
-                  <Col md="2">
-                    <label>Giá ($)</label>
-                    <Form.Control name="price" type="number" value={formData.price} onChange={handleChange} required />
-                  </Col>
-                  <Col md="2">
-                    <label>Tồn kho</label>
-                    <Form.Control name="stock" type="number" value={formData.stock} onChange={handleChange} />
-                  </Col>
-                  <Col md="4">
-                    <label>Thương hiệu</label>
-                    <Form.Control name="brand" value={formData.brand} onChange={handleChange} placeholder="Apple, Nike..." />
-                  </Col>
+                  
+                  <Col md="4"><Form.Group><label>Link Ảnh</label><Form.Control name="image" value={formData.image} onChange={handleChange} /></Form.Group></Col>
                 </Row>
-                <Row className="mt-3">
-                  <Col md="12">
-                    <label>Link Ảnh (URL)</label>
-                    <Form.Control name="image" value={formData.image} onChange={handleChange} placeholder="https://..." />
-                  </Col>
-                </Row>
-                <Row className="mt-3">
-                  <Col md="12">
-                    <label>Mô tả</label>
-                    <Form.Control as="textarea" rows={3} name="description" value={formData.description} onChange={handleChange} />
-                  </Col>
-                </Row>
-                <Row className="mt-4">
-                   <Col md="12">
-                      <Button type="submit" variant={isEditing ? "warning" : "success"} className="btn-fill">
-                        {isEditing ? "Cập Nhật Ngay" : "Thêm Mới Ngay"}
-                      </Button>
-                      {isEditing && (
-                        <Button variant="secondary" className="btn-fill ml-2" onClick={resetForm}>Hủy Bỏ</Button>
-                      )}
-                   </Col>
-                </Row>
+                <Row><Col md="12"><Form.Group><label>Mô tả</label><Form.Control as="textarea" rows={3} name="description" value={formData.description} onChange={handleChange} /></Form.Group></Col></Row>
+                <Button type="submit" className="btn-fill mt-3" variant={isEditing ? "warning" : "success"}>{isEditing ? "Lưu" : "Thêm"}</Button>
+                {isEditing && <Button variant="secondary" className="btn-fill mt-3 ml-2" onClick={resetForm}>Hủy</Button>}
               </Form>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {/* --- PHẦN 2: BẢNG DANH SÁCH --- */}
+      {/* BẢNG DANH SÁCH */}
       <Row>
         <Col md="12">
           <Card className="strpied-tabled-with-hover">
             <Card.Header>
-              <Card.Title as="h4">Kho Hàng Hiện Tại</Card.Title>
+                <div className="d-flex justify-content-between align-items-center">
+                    <Card.Title as="h4">Kho Hàng</Card.Title>
+                    
+                    {/* 🔥 BỘ LỌC SẢN PHẨM */}
+                    <Form.Control 
+                        as="select" 
+                        style={{width: "200px"}} 
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                    >
+                        <option value="ALL">Tất cả danh mục</option>
+                        <option value="Áo">Áo</option>
+                        <option value="Quần">Quần</option>
+                        <option value="Giày">Giày</option>
+                        <option value="Phụ kiện">Phụ kiện</option>
+                        <option value="Khác">Khác</option>
+                    </Form.Control>
+                </div>
             </Card.Header>
             <Card.Body className="table-full-width table-responsive px-0">
-              <Table className="table-hover table-striped">
+              <Table className="table-hover table-striped align-middle">
                 <thead>
                   <tr>
-                    <th className="border-0">ID</th>
-                    <th className="border-0">Ảnh</th>
-                    <th className="border-0">Tên</th>
-                    <th className="border-0">Giá</th>
-                    <th className="border-0">Kho</th>
-                    <th className="border-0">Hành động</th>
+                    <th>ID</th>
+                    <th>Ảnh</th> {/* 🔥 Cột Ảnh Mới */}
+                    <th>Tên</th>
+                    <th>Danh mục</th> {/* 🔥 Cột Danh Mục Mới */}
+                    <th>Giá</th>
+                    <th>Kho</th>
+                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((item) => (
-                    <tr key={item.id || item._id}>
-                      <td>{item.id || item._id}</td>
+                  {filteredProducts.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.id}</td>
+                      
+                      {/* 🔥 HIỂN THỊ ẢNH THUMBNAIL */}
                       <td>
-                        <img src={item.image} alt="" style={{width: "50px", height: "50px", objectFit: "cover"}} />
+                        <img 
+                            src={item.image} 
+                            alt="sp" 
+                            style={{
+                                width: "50px", height: "50px", objectFit: "cover", 
+                                borderRadius: "5px", border: "1px solid #ddd"
+                            }} 
+                            onError={(e) => e.target.src = "https://via.placeholder.com/50"}
+                        />
                       </td>
+
                       <td>{item.name}</td>
-                      <td>${item.price}</td>
-                      <td>{item.stock || item.countInStock}</td>
+                      
+                      {/* 🔥 HIỂN THỊ DANH MỤC */}
                       <td>
-                        {/* Nút SỬA */}
-                        <Button 
-                          variant="warning" size="sm" className="mr-2"
-                          onClick={() => handleEditClick(item)}
-                        >
-                          Sửa
-                        </Button>
-                        {/* Nút XOÁ */}
-                        <Button 
-                          variant="danger" size="sm" 
-                          onClick={() => handleDelete(item.id || item._id)}
-                        >
-                          Xoá
-                        </Button>
+                          <span className="badge badge-info" style={{padding: "5px 10px", fontSize: "12px"}}>
+                              {item.category || "Chưa phân loại"}
+                          </span>
+                      </td>
+
+                      <td>${item.price}</td>
+                      <td>{item.stock}</td>
+                      <td>
+                        <Button size="sm" variant="warning" onClick={() => handleEditClick(item)} className="mr-1"><i className="fa fa-edit"></i></Button>
+                        <Button size="sm" variant="danger" onClick={() => handleDelete(item.id)}><i className="fa fa-trash"></i></Button>
                       </td>
                     </tr>
                   ))}
