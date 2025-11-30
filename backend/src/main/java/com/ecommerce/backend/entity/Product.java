@@ -20,6 +20,8 @@ public class Product {
     @Column(nullable = false)
     private double price;
 
+    
+
     // 🔥 FIX LỖI MẤT ẢNH: Dùng TEXT để lưu link ảnh siêu dài
     @Column(columnDefinition = "TEXT") 
     private String image;
