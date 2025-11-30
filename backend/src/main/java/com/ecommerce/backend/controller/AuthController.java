@@ -5,7 +5,7 @@ import com.ecommerce.backend.dto.request.RegisterRequest;
 import com.ecommerce.backend.dto.response.ApiResponse;
 import com.ecommerce.backend.dto.response.LoginResponse;
 import com.ecommerce.backend.entity.User;
-import com.ecommerce.backend.repository.UserRepository; // Nhớ import cái này
+import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.security.JwtUtil;
 import com.ecommerce.backend.service.UserService;
 import jakarta.validation.Valid;
@@ -18,12 +18,13 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/auth") // ✅ Khớp với SecurityConfig
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*") // Hỗ trợ thêm
 public class AuthController {
 
     private final UserService userService;
-    private final UserRepository userRepository; // 👇 Thêm Repository vào để tìm user nhanh
+    private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
@@ -31,10 +32,13 @@ public class AuthController {
     public ApiResponse<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
         log.info("Register request: {}", request.getUsername());
         User user = userService.register(request);
+        
+        // Tạo token ngay để login luôn
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+        
         return ApiResponse.success(
                 new LoginResponse(token, user.getUsername(), user.getRole()),
-                "Registration successful"
+                "Đăng ký thành công"
         );
     }
 
@@ -43,15 +47,14 @@ public class AuthController {
         log.info("Login attempt: {}", request.getUsername());
 
         try {
-            // 1. Xác thực (Spring sẽ tự gọi UserDetailsServiceImpl ở trên)
+            // 1. Xác thực qua Spring Security
             authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
-            // 2. Lấy thông tin User từ DB (Tìm bằng Username HOẶC Email)
-            // Đoạn code cũ của bạn findByUsername sẽ lỗi nếu user nhập email
+            // 2. Lấy thông tin User
             User user = userRepository.findByUsernameOrEmail(request.getUsername(), request.getUsername())
-                    .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
+                    .orElseThrow(() -> new BadCredentialsException("User not found"));
 
             // 3. Tạo Token
             String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
@@ -59,11 +62,10 @@ public class AuthController {
             log.info("Login successful: {}", user.getUsername());
             return ApiResponse.success(
                     new LoginResponse(token, user.getUsername(), user.getRole()),
-                    "Login successful"
+                    "Đăng nhập thành công"
             );
 
         } catch (BadCredentialsException e) {
-            // 👇 Bắt lỗi sai mật khẩu để không bị 500
             return ApiResponse.error(401, "Tài khoản hoặc mật khẩu không đúng!");
         } catch (Exception e) {
             log.error("Login error", e);
