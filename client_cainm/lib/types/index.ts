@@ -15,6 +15,7 @@ export interface AuthResponse {
 
 // Product
 export interface Product {
+  stock: number;
   id: number;
   name: string;
   price: number;
