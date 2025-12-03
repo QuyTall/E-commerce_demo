@@ -1,5 +1,7 @@
 package com.ecommerce.backend.dto.response;
 
+import java.util.Map;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,5 +28,10 @@ public class ApiResponse<T> {
     // 3. Hàm error đầy đủ (Có mã lỗi) -> Fix lỗi GlobalExceptionHandler
     public static <T> ApiResponse<T> error(int code, String message) {
         return new ApiResponse<>(false, message, null, code);
+    }
+
+    public static Object error(int value, String string, Map<String,String> errors) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'error'");
     }
 }

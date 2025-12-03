@@ -1,6 +1,7 @@
 {
   "name": "light-bootstrap-dashboard-react",
   "version": "2.0.1",
+  "proxy": "http://localhost:8080",
   "dependencies": {
     "@fortawesome/fontawesome-free": "5.15.2",
     "ajv": "^8.16.0",
