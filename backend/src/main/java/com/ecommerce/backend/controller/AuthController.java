@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auth") // ✅ Khớp với SecurityConfig
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Hỗ trợ thêm
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final UserService userService;
@@ -31,35 +31,40 @@ public class AuthController {
     @PostMapping("/register")
     public ApiResponse<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
         log.info("Register request: {}", request.getUsername());
-        User user = userService.register(request);
-        
-        // Tạo token ngay để login luôn
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
-        
-        return ApiResponse.success(
-                new LoginResponse(token, user.getUsername(), user.getRole()),
-                "Đăng ký thành công"
-        );
+        try {
+            // Gọi Service đăng ký
+            User user = userService.register(request);
+            
+            // Tạo token ngay
+            String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+            
+            return ApiResponse.success(
+                    new LoginResponse(token, user.getUsername(), user.getRole()),
+                    "Đăng ký thành công"
+            );
+        } catch (IllegalArgumentException e) {
+            // Bắt lỗi trùng Username/Email (Service ném ra)
+            log.error("Register failed: {}", e.getMessage());
+            return ApiResponse.error(400, e.getMessage()); // Trả về 400 để Frontend hiển thị toast.error
+        } catch (Exception e) {
+            log.error("System error", e);
+            return ApiResponse.error(500, "Lỗi hệ thống: " + e.getMessage());
+        }
     }
 
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         log.info("Login attempt: {}", request.getUsername());
-
         try {
-            // 1. Xác thực qua Spring Security
             authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
-            // 2. Lấy thông tin User
             User user = userRepository.findByUsernameOrEmail(request.getUsername(), request.getUsername())
                     .orElseThrow(() -> new BadCredentialsException("User not found"));
 
-            // 3. Tạo Token
             String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
 
-            log.info("Login successful: {}", user.getUsername());
             return ApiResponse.success(
                     new LoginResponse(token, user.getUsername(), user.getRole()),
                     "Đăng nhập thành công"

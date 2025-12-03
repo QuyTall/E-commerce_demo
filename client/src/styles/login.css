@@ -1,0 +1,38 @@
+.auth__form {
+  background: #fff;
+  padding: 40px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.auth__form input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  outline: none;
+  margin-bottom: 20px;
+}
+
+.auth__btn {
+  background: #0f3460;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  width: 100%;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.auth__btn:hover {
+  background: #000;
+}
+
+.login_section {
+    padding: 60px 0;
+    background: #f6f9fc;
+}

@@ -6,10 +6,16 @@ import Footer from "./components/Footer/Footer";
 import Loader from "./components/Loader/Loader";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// Lazy load các component trang
 const Home = lazy(() => import("./pages/Home"));
 const Shop = lazy(() => import("./pages/Shop"));
 const Cart = lazy(() => import("./pages/Cart"));
 const Product = lazy(() => import("./pages/Product"));
+// --- BỔ SUNG IMPORT LOGIN & REGISTER ---
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+
 function App() {
   return (
     <Suspense fallback={<Loader />}>
@@ -25,13 +31,22 @@ function App() {
           pauseOnHover
           theme="light"
         />
+        
+        {/* Thanh điều hướng */}
         <NavBar />
+        
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/shop/:id" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
+          
+          {/* --- BỔ SUNG ROUTE CHO LOGIN & REGISTER --- */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Register />} />
         </Routes>
+        
+        {/* Chân trang */}
         <Footer />
       </Router>
     </Suspense>

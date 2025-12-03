@@ -1,23 +1,27 @@
 package com.ecommerce.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
+@Table(name = "order_items")
 @Data
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String productName; // Lưu tên lúc mua (đề phòng sau này đổi tên sp)
-    private double price;       // Giá lúc mua
     private int quantity;
-    private String image;
+    private Double price;
 
     @ManyToOne
     @JoinColumn(name = "order_id")
-    @JsonIgnore // Tránh lỗi vòng lặp vô tận khi chuyển thành JSON
+    @JsonBackReference
     private Order order;
+
+    // --- QUAN TRỌNG: Thêm quan hệ với Product ---
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
 }

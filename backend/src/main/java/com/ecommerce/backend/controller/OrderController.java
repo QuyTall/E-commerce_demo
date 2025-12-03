@@ -1,11 +1,18 @@
-package com.ecommerce.backend.controller;
+package com.ecommerce.backend.controller; // <--- SỬA LỖI THIẾU PACKAGE
 
+import com.ecommerce.backend.dto.request.OrderItemRequest;
+import com.ecommerce.backend.dto.request.OrderRequest;
 import com.ecommerce.backend.entity.Order;
 import com.ecommerce.backend.entity.OrderItem;
+import com.ecommerce.backend.entity.Product;
+import com.ecommerce.backend.entity.User;
 import com.ecommerce.backend.repository.OrderRepository;
+import com.ecommerce.backend.repository.ProductRepository;
+import com.ecommerce.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -15,33 +22,44 @@ import java.util.List;
 public class OrderController {
 
     private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
+    private final ProductRepository productRepository;
 
-    // 1. KHÁCH HÀNG: Đặt hàng (Tạo đơn mới)
     @PostMapping
-    public Order placeOrder(@RequestBody Order order) {
-        order.setStatus("PENDING"); // Mặc định là Chờ xử lý
+    public Order placeOrder(@RequestBody OrderRequest request) {
+        Order order = new Order();
         
-        // Gán order cho từng item để lưu vào DB chuẩn
-        if (order.getItems() != null) {
-            for (OrderItem item : order.getItems()) {
-                item.setOrder(order);
+        // 1. Tìm User (Sửa lỗi setUser undefined)
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        order.setUser(user);
+        
+        order.setTotalPrice(request.getTotalPrice());
+        order.setStatus("PENDING");
+
+        // 2. Map danh sách sản phẩm (Sửa lỗi setProduct undefined)
+        List<OrderItem> items = new ArrayList<>();
+        if (request.getOrderItems() != null) {
+            for (OrderItemRequest itemReq : request.getOrderItems()) {
+                OrderItem item = new OrderItem();
+                
+                Product product = productRepository.findById(itemReq.getProductId())
+                        .orElseThrow(() -> new RuntimeException("Product not found"));
+                
+                item.setProduct(product);
+                item.setQuantity(itemReq.getQuantity());
+                item.setPrice(itemReq.getPrice());
+                item.setOrder(order); 
+                items.add(item);
             }
         }
+        order.setItems(items);
+
         return orderRepository.save(order);
     }
 
-    // 2. ADMIN: Xem tất cả đơn hàng
     @GetMapping
     public List<Order> getAllOrders() {
-        return orderRepository.findAllByOrderByCreatedAtDesc();
-    }
-
-    // 3. ADMIN: Cập nhật trạng thái (Duyệt đơn / Giao hàng)
-    @PutMapping("/{id}/status")
-    public Order updateStatus(@PathVariable Long id, @RequestBody String status) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-        order.setStatus(status);
-        return orderRepository.save(order);
+        return orderRepository.findAll();
     }
 }
