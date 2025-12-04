@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -29,23 +30,25 @@ public class OrderController {
     public Order placeOrder(@RequestBody OrderRequest request) {
         Order order = new Order();
         
-        // 1. Tìm User từ ID (Backend "hiểu" userId là ai)
+        // Tìm User từ ID
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         order.setUser(user);
         
+        // Lưu thông tin khách hàng
+        order.setCustomerName(request.getCustomerName());
+        order.setPhone(request.getPhone());
+        order.setAddress(request.getAddress());
         order.setTotalPrice(request.getTotalPrice());
         order.setStatus("PENDING");
 
-        // 2. Tìm Product từ ID (Backend "hiểu" productId là món gì)
+        // Xử lý Order Items
         List<OrderItem> items = new ArrayList<>();
         if (request.getOrderItems() != null) {
             for (OrderItemRequest itemReq : request.getOrderItems()) {
                 OrderItem item = new OrderItem();
-                
                 Product product = productRepository.findById(itemReq.getProductId())
                         .orElseThrow(() -> new RuntimeException("Product not found"));
-                
                 item.setProduct(product);
                 item.setQuantity(itemReq.getQuantity());
                 item.setPrice(itemReq.getPrice());
@@ -54,12 +57,25 @@ public class OrderController {
             }
         }
         order.setItems(items);
-
         return orderRepository.save(order);
     }
 
     @GetMapping
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
+    }
+
+    // --- THÊM ĐOẠN NÀY ---
+    @PutMapping("/{id}")
+    public Order updateOrderStatus(@PathVariable Long id, @RequestBody Map<String, String> statusMap) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
+        
+        // Frontend gửi lên dạng JSON: { "status": "SHIPPED" }
+        if (statusMap.containsKey("status")) {
+            order.setStatus(statusMap.get("status"));
+        }
+        
+        return orderRepository.save(order);
     }
 }

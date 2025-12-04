@@ -1,92 +1,73 @@
-import { useEffect } from "react";
-import { Col, Container, Row } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Col, Container, Row, Form } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  addToCart,
-  decreaseQty,
-  deleteProduct,
-} from "../app/features/cart/cartSlice";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 import Banner from "../components/Banner/Banner";
+import { addToCart, decreaseQty, deleteProduct } from "../app/features/cart/cartSlice";
 
 const Cart = () => {
   const { cartList } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  
+  // --- STATE LƯU THÔNG TIN GIAO HÀNG ---
+  const [customerInfo, setCustomerInfo] = useState({
+    name: "",
+    phone: "",
+    address: ""
+  });
 
   // Tính tổng tiền
-  const totalPrice = cartList.reduce(
-    (price, item) => price + item.qty * item.price,
-    0
-  );
+  const totalPrice = cartList.reduce((price, item) => price + item.qty * item.price, 0);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  // Hàm xử lý thay đổi thông tin nhập liệu
+  const handleInputChange = (e) => {
+    setCustomerInfo({ ...customerInfo, [e.target.name]: e.target.value });
+  };
 
-  // =============================
-  // 🚀 XỬ LÝ THANH TOÁN (CHECKOUT)
-  // =============================
+  // Xử lý thanh toán (checkout)
   const handleCheckout = async () => {
     const userString = localStorage.getItem("user");
-
-    console.log("DEBUG - User in localStorage:", userString);
-
-    // 1) Nếu chưa đăng nhập → yêu cầu login
     if (!userString) {
       toast.warning("Vui lòng đăng nhập để thanh toán!");
       navigate("/login");
       return;
     }
-
+    
     const user = JSON.parse(userString);
 
-    console.log("DEBUG - Parsed user:", user);
-
-    // 2) Kiểm tra ID có tồn tại không
-    if (!user.id) {
-      toast.error("Không tìm thấy ID người dùng! Vui lòng đăng nhập lại.");
-      navigate("/login");
+    // Kiểm tra đã nhập đủ thông tin chưa
+    if (!customerInfo.name || !customerInfo.phone || !customerInfo.address) {
+      toast.warning("Vui lòng nhập đầy đủ thông tin giao hàng!");
       return;
     }
 
-    // 3) Chuẩn bị body gửi lên backend
     const orderData = {
       userId: user.id,
+      // --- GỬI KÈM THÔNG TIN MỚI ---
+      customerName: customerInfo.name,
+      phone: customerInfo.phone,
+      address: customerInfo.address,
+      // ----------------------------
       totalPrice: totalPrice,
-      orderItems: cartList.map((item) => ({
+      orderItems: cartList.map(item => ({
         productId: item.id,
         quantity: item.qty,
-        price: item.price,
-      })),
+        price: item.price
+      }))
     };
 
-    console.log("DEBUG - Order Data gửi lên Backend:", orderData);
-
-    // 4) Gọi API tạo đơn hàng
     try {
       await axios.post("http://localhost:8080/api/orders", orderData, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
+        headers: { Authorization: `Bearer ${user.token}` }
       });
-
-      toast.success("Đặt hàng thành công! Cảm ơn bạn.");
+      toast.success("Đặt hàng thành công!");
       navigate("/shop");
     } catch (error) {
-      console.error("❌ Lỗi thanh toán:", error);
       toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
     }
-  };
-
-  // Format tiền
-  const formatPrice = (value) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(value);
   };
 
   return (
@@ -111,7 +92,7 @@ const Cart = () => {
                   <div className="cart-list" key={item.id}>
                     <Row>
                       <Col className="image-holder" sm={4} md={3}>
-                        <img src={item.imgUrl} alt="" />
+                        <img src={item.imgUrl} alt={item.productName} />
                       </Col>
 
                       <Col sm={8} md={9}>
@@ -119,17 +100,15 @@ const Cart = () => {
                           <Col xs={12} sm={9} className="cart-details">
                             <h3>{item.productName}</h3>
                             <h4>
-                              {formatPrice(item.price)} × {item.qty}
-                              <span>{formatPrice(productQty)}</span>
+                              {item.price} × {item.qty}
+                              <span>{productQty}</span>
                             </h4>
                           </Col>
 
                           <Col xs={12} sm={3} className="cartControl">
                             <button
                               className="incCart"
-                              onClick={() =>
-                                dispatch(addToCart({ product: item, num: 1 }))
-                              }
+                              onClick={() => dispatch(addToCart({ product: item, num: 1 }))}
                             >
                               <i className="fa-solid fa-plus"></i>
                             </button>
@@ -158,24 +137,51 @@ const Cart = () => {
 
             <Col md={4}>
               <div className="cart-total">
-                <h2>Cart Summary</h2>
+                <h2>Tổng đơn hàng</h2>
                 <div className="d_flex">
-                  <h4>Total Price:</h4>
-                  <h3>{formatPrice(totalPrice)}</h3>
+                  <h4>Tổng tiền:</h4>
+                  <h3>{totalPrice} VND</h3>
                 </div>
-
+                
                 {cartList.length > 0 && (
-                  <button
-                    className="btn btn-primary w-100 mt-3"
-                    style={{
-                      padding: "10px",
-                      fontSize: "1.1rem",
-                      borderRadius: "5px",
-                    }}
-                    onClick={handleCheckout}
-                  >
-                    Thanh Toán Ngay
-                  </button>
+                  <div className="mt-4">
+                    <h5>Thông tin giao hàng:</h5>
+                    <Form.Group className="mb-2">
+                      <Form.Control 
+                        type="text" 
+                        placeholder="Họ tên người nhận" 
+                        name="name" 
+                        value={customerInfo.name} 
+                        onChange={handleInputChange} 
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-2">
+                      <Form.Control 
+                        type="text" 
+                        placeholder="Số điện thoại" 
+                        name="phone" 
+                        value={customerInfo.phone} 
+                        onChange={handleInputChange} 
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Control 
+                        as="textarea" 
+                        rows={2} 
+                        placeholder="Địa chỉ giao hàng" 
+                        name="address" 
+                        value={customerInfo.address} 
+                        onChange={handleInputChange} 
+                      />
+                    </Form.Group>
+
+                    <button 
+                      className="btn btn-primary w-100" 
+                      onClick={handleCheckout}
+                    >
+                      Thanh Toán
+                    </button>
+                  </div>
                 )}
               </div>
             </Col>

@@ -5,7 +5,7 @@ import com.ecommerce.backend.service.impl.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // Import HttpMethod
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -32,32 +32,27 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 🔥 QUAN TRỌNG: Thêm dòng này để kích hoạt CORS
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Cho phép Preflight Request (tránh lỗi CORS trên trình duyệt)
+                        // 1. Cho phép Preflight Request (OPTIONS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 2. Public API (Lưu ý: Phải có /api ở trước như bạn đã định nghĩa)
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/products/**",
-                                "/api/category/**",
-                                "/api/brand/**",
-                                "/api/store/**",
-                                "/images/**",
-                                "/error"
-                        ).permitAll()
+                        // 2. API Public (Ai cũng vào được)
+                        .requestMatchers("/api/auth/**", "/images/**", "/error").permitAll()
+                        
+                        // 3. API Sản phẩm & Danh mục: Khách chỉ được XEM (GET)
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**").permitAll()
 
-                        // 3. Giỏ hàng & Đơn hàng (Nên mở để khách vãng lai xem, hoặc chặn tùy logic)
-                        .requestMatchers("/api/cart/**", "/api/orders/**").permitAll()
+                        // 4. API Admin: Chỉ Admin mới được Thêm/Sửa/Xóa
+                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/categories/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/categories/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/categories/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                        
+                        // 5. API Đơn hàng & Giỏ hàng: Phải đăng nhập mới được dùng
+                        .requestMatchers("/api/cart/**", "/api/orders/**").authenticated()
 
-                        // 4. Admin
-                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN") // Sửa hasRole thành hasAnyAuthority cho chắc chắn
-
-                        // 5. Các request còn lại phải đăng nhập
+                        // Các request còn lại yêu cầu đăng nhập
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
@@ -66,11 +61,11 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🔥 Bean Cấu hình CORS (Cho phép Frontend gọi vào)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001")); // Cho phép cả Client và Admin
+        // Cho phép Client (3002) và Admin (3001) gọi API
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001", "http://localhost:3002"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true);

@@ -14,20 +14,22 @@ function Orders() {
       .catch(err => console.error(err));
   };
 
-  useEffect(() => { loadOrders(); }, []);
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
   // Duyệt đơn (Chuyển thành SHIPPED)
-  const handleShip = (id) => {
-    if(window.confirm("Xác nhận giao đơn hàng này?")) {
-        axios.put(`http://localhost:8080/api/orders/${id}/status`, "SHIPPED", {
-            headers: { 
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'text/plain' // Quan trọng vì gửi String thô
-            }
-        }).then(() => {
-            alert("Đã cập nhật trạng thái!");
-            loadOrders();
-        });
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      // Gọi API: PUT /api/orders/{id}
+      // Body: { "status": "SHIPPED" }
+      await axios.put(`http://localhost:8080/api/orders/${orderId}`, { status: newStatus }, config);
+      
+      alert("Cập nhật trạng thái thành công!");
+      loadOrders(); // Cập nhật lại danh sách đơn hàng
+    } catch (error) {
+      console.error("Lỗi cập nhật:", error);
+      alert("Cập nhật thất bại!");
     }
   };
 
@@ -46,6 +48,7 @@ function Orders() {
                     <th>ID</th>
                     <th>Khách Hàng</th>
                     <th>SĐT</th>
+                    <th>Địa Chỉ</th>
                     <th>Tổng Tiền</th>
                     <th>Ngày Đặt</th>
                     <th>Trạng Thái</th>
@@ -58,19 +61,19 @@ function Orders() {
                       <td>{order.id}</td>
                       <td>{order.customerName}</td>
                       <td>{order.phone}</td>
-                      <td>${order.totalAmount}</td>
-                      <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td>{order.address}</td>
+                      <td>${order.totalPrice}</td>
                       <td>
                         {order.status === "PENDING" ? 
-                            <Badge bg="warning" text="dark">Chờ xử lý</Badge> : 
-                            <Badge bg="success">Đã giao</Badge>
+                          <Badge bg="warning" text="dark">Chờ xử lý</Badge> : 
+                          <Badge bg="success">Đã giao</Badge>
                         }
                       </td>
                       <td>
                         {order.status === "PENDING" && (
-                            <Button size="sm" variant="primary" onClick={() => handleShip(order.id)}>
-                                Giao Hàng
-                            </Button>
+                          <Button size="sm" variant="primary" onClick={() => handleUpdateStatus(order.id, "SHIPPED")}>
+                            Giao Hàng
+                          </Button>
                         )}
                       </td>
                     </tr>
