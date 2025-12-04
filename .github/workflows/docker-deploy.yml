@@ -1,0 +1,9 @@
+# Build Backend
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          # SỬA DÒNG NÀY:
+          tags: ${{ secrets.DOCKER_USERNAME }}/ecommerce-backend:latest 
+          # Hoặc: tags: quycao04/ecommerce-backend:latest
