@@ -28,30 +28,42 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
+    /* ==========================================================
+       REGISTER
+    ========================================================== */
     @PostMapping("/register")
     public ApiResponse<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
         log.info("Register request: {}", request.getUsername());
         try {
-            // Gọi Service đăng ký
+            // Đăng ký
             User user = userService.register(request);
-            
-            // Tạo token ngay
+
+            // Tạo token
             String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
-            
+
+            // Trả về kèm userId
             return ApiResponse.success(
-                    new LoginResponse(token, user.getUsername(), user.getRole()),
-                    "Đăng ký thành công"
+                new LoginResponse(
+                    user.getId(),        // <--- TRẢ VỀ ID
+                    token,
+                    user.getUsername(),
+                    user.getRole()
+                ),
+                "Thành công"
             );
+
         } catch (IllegalArgumentException e) {
-            // Bắt lỗi trùng Username/Email (Service ném ra)
             log.error("Register failed: {}", e.getMessage());
-            return ApiResponse.error(400, e.getMessage()); // Trả về 400 để Frontend hiển thị toast.error
+            return ApiResponse.error(400, e.getMessage());
         } catch (Exception e) {
             log.error("System error", e);
             return ApiResponse.error(500, "Lỗi hệ thống: " + e.getMessage());
         }
     }
 
+    /* ==========================================================
+       LOGIN
+    ========================================================== */
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         log.info("Login attempt: {}", request.getUsername());
@@ -60,14 +72,22 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
+            // Lấy user từ DB
             User user = userRepository.findByUsernameOrEmail(request.getUsername(), request.getUsername())
                     .orElseThrow(() -> new BadCredentialsException("User not found"));
 
+            // Tạo token
             String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
 
+            // Trả về kèm userId
             return ApiResponse.success(
-                    new LoginResponse(token, user.getUsername(), user.getRole()),
-                    "Đăng nhập thành công"
+                new LoginResponse(
+                    user.getId(),        // <--- TRẢ VỀ ID
+                    token,
+                    user.getUsername(),
+                    user.getRole()
+                ),
+                "Đăng nhập thành công"
             );
 
         } catch (BadCredentialsException e) {

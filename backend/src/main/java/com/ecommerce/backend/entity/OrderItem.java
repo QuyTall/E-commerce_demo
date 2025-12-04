@@ -13,14 +13,14 @@ public class OrderItem {
     private Long id;
 
     private int quantity;
-    private Double price;
+    private double price;
 
     @ManyToOne
     @JoinColumn(name = "order_id")
     @JsonBackReference
     private Order order;
 
-    // --- QUAN TRỌNG: Thêm quan hệ với Product ---
+    // THÊM QUAN HỆ VỚI PRODUCT
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;

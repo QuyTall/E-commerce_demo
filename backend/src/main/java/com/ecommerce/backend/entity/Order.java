@@ -3,24 +3,22 @@ package com.ecommerce.backend.entity;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import java.util.Date;
 import java.util.List;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "orders") // Tránh trùng từ khóa SQL "Order"
+@Table(name = "orders")
 @Data
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Double totalPrice;
+    private double totalAmount;
     private String status;
+    private Date createdAt = new Date();
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    // --- QUAN TRỌNG: Thêm quan hệ với User ---
+    // THÊM QUAN HỆ VỚI USER
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -28,4 +26,9 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<OrderItem> items;
+
+    public void setTotalPrice(Double totalPrice) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setTotalPrice'");
+    }
 }

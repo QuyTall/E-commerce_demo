@@ -10,25 +10,29 @@ export const fetchProductsFromAPI = async () => {
   try {
     const response = await axios.get(`${API_URL}/products`);
 
-    return response.data.map((item) => ({
-      id: item.productId.toString(), // <--- SỬA Ở ĐÂY
-      productName: item.productName,
+    return response.data.map((item) => {
+      const realId = item.productId || item.id; // HỖ TRỢ CẢ HAI BACKEND
 
-      imgUrl:
-        item.image && item.image.startsWith("http")
-          ? item.image
-          : `http://localhost:8080/images/${item.image}`,
+      return {
+        id: realId.toString(), // <-- đảm bảo không bị undefined.toString()
+        productName: item.productName,
 
-      category: item.category?.name?.toLowerCase() || "other",
-      price: item.price,
-      shortDesc: item.description
-        ? item.description.substring(0, 50) + "..."
-        : "Mô tả ngắn",
+        imgUrl:
+          item.image && item.image.startsWith("http")
+            ? item.image
+            : `http://localhost:8080/images/${item.image}`,
 
-      description: item.description || "Chi tiết sản phẩm đang cập nhật...",
-      reviews: [],
-      avgRating: 4.5,
-    }));
+        category: item.category?.name?.toLowerCase() || "other",
+        price: item.price,
+        shortDesc: item.description
+          ? item.description.substring(0, 50) + "..."
+          : "Mô tả ngắn",
+
+        description: item.description || "Chi tiết sản phẩm đang cập nhật...",
+        reviews: [],
+        avgRating: 4.5,
+      };
+    });
   } catch (error) {
     console.error("Lỗi khi gọi API products:", error);
     return [];
@@ -43,8 +47,10 @@ export const fetchProductById = async (id) => {
     const response = await axios.get(`${API_URL}/products/${id}`);
     const item = response.data;
 
+    const realId = item.productId || item.id;
+
     return {
-      id: item.productId.toString(), // <--- SỬA Ở ĐÂY
+      id: realId.toString(),
       productName: item.productName,
 
       imgUrl:

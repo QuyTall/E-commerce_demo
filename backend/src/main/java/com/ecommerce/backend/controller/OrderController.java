@@ -1,7 +1,7 @@
-package com.ecommerce.backend.controller; // <--- SỬA LỖI THIẾU PACKAGE
+package com.ecommerce.backend.controller;
 
-import com.ecommerce.backend.dto.request.OrderItemRequest;
 import com.ecommerce.backend.dto.request.OrderRequest;
+import com.ecommerce.backend.dto.request.OrderItemRequest;
 import com.ecommerce.backend.entity.Order;
 import com.ecommerce.backend.entity.OrderItem;
 import com.ecommerce.backend.entity.Product;
@@ -29,7 +29,7 @@ public class OrderController {
     public Order placeOrder(@RequestBody OrderRequest request) {
         Order order = new Order();
         
-        // 1. Tìm User (Sửa lỗi setUser undefined)
+        // 1. Tìm User từ ID (Backend "hiểu" userId là ai)
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         order.setUser(user);
@@ -37,7 +37,7 @@ public class OrderController {
         order.setTotalPrice(request.getTotalPrice());
         order.setStatus("PENDING");
 
-        // 2. Map danh sách sản phẩm (Sửa lỗi setProduct undefined)
+        // 2. Tìm Product từ ID (Backend "hiểu" productId là món gì)
         List<OrderItem> items = new ArrayList<>();
         if (request.getOrderItems() != null) {
             for (OrderItemRequest itemReq : request.getOrderItems()) {
@@ -49,7 +49,7 @@ public class OrderController {
                 item.setProduct(product);
                 item.setQuantity(itemReq.getQuantity());
                 item.setPrice(itemReq.getPrice());
-                item.setOrder(order); 
+                item.setOrder(order);
                 items.add(item);
             }
         }

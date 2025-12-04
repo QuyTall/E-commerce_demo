@@ -8,10 +8,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor // Cần thiết cho Jackson deserialization
+@NoArgsConstructor
 @Builder
 public class LoginResponse {
+    private Long id;
     private String token;
     private String username;
-    private Role role; // Frontend sẽ nhận được string "USER" hoặc "ADMIN"
+    private Role role;
 }
