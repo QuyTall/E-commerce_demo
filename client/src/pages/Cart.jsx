@@ -7,27 +7,26 @@ import axios from "axios";
 import Banner from "../components/Banner/Banner";
 import { addToCart, decreaseQty, deleteProduct } from "../app/features/cart/cartSlice";
 
+// 👇 KHAI BÁO IP SERVER
+const API_URL = "http://100.26.182.209:8080/api/orders";
+
 const Cart = () => {
   const { cartList } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  // --- STATE LƯU THÔNG TIN GIAO HÀNG ---
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     phone: "",
     address: ""
   });
 
-  // Tính tổng tiền
   const totalPrice = cartList.reduce((price, item) => price + item.qty * item.price, 0);
 
-  // Hàm xử lý thay đổi thông tin nhập liệu
   const handleInputChange = (e) => {
     setCustomerInfo({ ...customerInfo, [e.target.name]: e.target.value });
   };
 
-  // Xử lý thanh toán (checkout)
   const handleCheckout = async () => {
     const userString = localStorage.getItem("user");
     if (!userString) {
@@ -38,7 +37,6 @@ const Cart = () => {
     
     const user = JSON.parse(userString);
 
-    // Kiểm tra đã nhập đủ thông tin chưa
     if (!customerInfo.name || !customerInfo.phone || !customerInfo.address) {
       toast.warning("Vui lòng nhập đầy đủ thông tin giao hàng!");
       return;
@@ -46,11 +44,9 @@ const Cart = () => {
 
     const orderData = {
       userId: user.id,
-      // --- GỬI KÈM THÔNG TIN MỚI ---
       customerName: customerInfo.name,
       phone: customerInfo.phone,
       address: customerInfo.address,
-      // ----------------------------
       totalPrice: totalPrice,
       orderItems: cartList.map(item => ({
         productId: item.id,
@@ -60,12 +56,14 @@ const Cart = () => {
     };
 
     try {
-      await axios.post("http://localhost:8080/api/orders", orderData, {
+      // 👇 SỬA LẠI CHỖ NÀY: Dùng IP Server thay vì localhost
+      await axios.post(API_URL, orderData, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       toast.success("Đặt hàng thành công!");
       navigate("/shop");
     } catch (error) {
+      console.error(error);
       toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
     }
   };
