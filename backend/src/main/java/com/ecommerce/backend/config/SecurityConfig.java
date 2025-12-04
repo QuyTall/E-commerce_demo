@@ -32,27 +32,27 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                // Kích hoạt CORS với cấu hình bên dưới
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 1. Cho phép Preflight Request (OPTIONS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 2. API Public (Ai cũng vào được)
+                        // 2. API Public
                         .requestMatchers("/api/auth/**", "/images/**", "/error").permitAll()
                         
-                        // 3. API Sản phẩm & Danh mục: Khách chỉ được XEM (GET)
+                        // 3. API Sản phẩm & Danh mục (GET)
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**").permitAll()
 
-                        // 4. API Admin: Chỉ Admin mới được Thêm/Sửa/Xóa
+                        // 4. API Admin
                         .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/categories/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/categories/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/categories/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
                         
-                        // 5. API Đơn hàng & Giỏ hàng: Phải đăng nhập mới được dùng
+                        // 5. API user
                         .requestMatchers("/api/cart/**", "/api/orders/**").authenticated()
 
-                        // Các request còn lại yêu cầu đăng nhập
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
@@ -64,10 +64,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Cho phép Client (3002) và Admin (3001) gọi API
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001", "http://localhost:3002"));
+        
+        // 👇 QUAN TRỌNG: Thêm đầy đủ IP Server và Localhost
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:3000",       // Local Client
+            "http://localhost:3001",       // Local Admin
+            "http://100.26.182.209:3000",  // Server Client (Cái này đang lỗi, giờ sẽ hết)
+            "http://100.26.182.209:3001"   // Server Admin (Cái này đang lỗi, giờ sẽ hết)
+        ));
+        
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
