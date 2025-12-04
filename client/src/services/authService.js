@@ -1,31 +1,29 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/auth";
+// 👇 QUAN TRỌNG: IP Server AWS của bạn
+const API_URL = "http://100.26.182.209:8080/api/auth";
 
-export const loginUser = async (username, password) => {
-  try {
-    const response = await axios.post(`${API_URL}/login`, { username, password });
-    
-    // --- SỬA LỖI Ở ĐÂY ---
-    // Backend trả về: { status, message, data: { token, ... } }
-    // Ta chỉ cần lấy phần 'data' bên trong
-    const userData = response.data.data; 
-    
-    if (userData && userData.token) {
-      localStorage.setItem("user", JSON.stringify(userData));
-    }
-    
-    return userData; // Trả về object user sạch
-  } catch (error) {
-    throw error.response ? error.response.data : { message: "Lỗi Server" };
-  }
+// Đăng ký
+export const registerUser = async (userData) => {
+  const response = await axios.post(`${API_URL}/register`, userData);
+  return response.data;
 };
 
-export const registerUser = async (userData) => {
-  try {
-    const response = await axios.post(`${API_URL}/register`, userData);
-    return response.data;
-  } catch (error) {
-    throw error;
+// Đăng nhập
+export const loginUser = async (username, password) => {
+  const response = await axios.post(`${API_URL}/login`, {
+    username,
+    password,
+  });
+
+  if (response.data.token) {
+    localStorage.setItem("user", JSON.stringify(response.data));
   }
+
+  return response.data; // Trả về data để Redux xử lý tiếp
+};
+
+// Đăng xuất
+export const logoutUser = () => {
+  localStorage.removeItem("user");
 };

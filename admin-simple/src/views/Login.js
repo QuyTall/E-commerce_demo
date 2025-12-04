@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Container, Card, Form, Button, Row, Col, Alert } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
-import axios from "axios";
+// import axios from "axios"; // ❌ BỎ DÒNG NÀY ĐI
+import { authAPI } from "../../services/api"; // ✅ THÊM DÒNG NÀY (Đảm bảo đường dẫn đúng tới file api.js bạn vừa sửa)
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -14,7 +15,9 @@ function Login() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:8080/api/auth/login", {
+      // 👇 QUAN TRỌNG: Thay axios.post bằng authAPI.login
+      // Nó sẽ tự động lấy IP Server 100.26... từ file api.js
+      const res = await authAPI.login({
         username: username,
         password: password
       });
@@ -24,7 +27,7 @@ function Login() {
       if (data && data.token) {
         // Kiểm tra quyền Admin
         if (data.role !== "ADMIN" && data.role !== "ROLE_ADMIN") {
-            setError("bạn iu sai rồi"); // <--- SỬA THEO Ý BẠN
+            setError("bạn iu sai rồi");
             localStorage.removeItem("token");
             return;
         }
@@ -38,8 +41,8 @@ function Login() {
       }
     } catch (err) {
       console.error(err);
-      // Bắt mọi lỗi (sai pass, lỗi mạng, lỗi server) đều hiện câu này
-      setError("bạn iu sai rồi"); // <--- SỬA THEO Ý BẠN
+      // Bắt mọi lỗi (sai pass, lỗi mạng, lỗi server)
+      setError("bạn iu sai rồi (hoặc Server chưa chạy)");
     }
   };
 
