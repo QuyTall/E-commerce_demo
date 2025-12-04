@@ -1,0 +1,12 @@
+
+- name: Deploy to VPS
+  uses: appleboy/ssh-action@master
+  with:
+    host: ${{ secrets.HOST }}
+    username: ${{ secrets.USERNAME }}
+    key: ${{ secrets.SSH_KEY }}
+    script: |
+      docker pull your-dockerhub-user/your-repo:latest
+      docker stop current-container || true
+      docker rm current-container || true
+      docker run -d -p 8080:8080 your-dockerhub-user/your-repo:latest

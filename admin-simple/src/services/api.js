@@ -1,8 +1,10 @@
 import axios from 'axios';
 
-// Cấu hình base URL cho backend
+// 👇 QUAN TRỌNG: Đổi localhost thành IP Server
+const BASE_URL = 'http://100.26.182.209:8080/api';
+
 const API = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

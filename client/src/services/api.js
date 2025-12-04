@@ -1,7 +1,8 @@
 import axios from "axios";
 
-// Đường dẫn Backend Spring Boot
-const API_URL = "http://localhost:8080/api";
+// 👇 QUAN TRỌNG: Đổi localhost thành IP Server
+const API_URL = "http://100.26.182.209:8080/api";
+const IMAGE_BASE_URL = "http://100.26.182.209:8080/images/";
 
 /* ===============================
    LẤY TẤT CẢ SẢN PHẨM
@@ -14,13 +15,14 @@ export const fetchProductsFromAPI = async () => {
       const realId = item.productId || item.id; // HỖ TRỢ CẢ HAI BACKEND
 
       return {
-        id: realId.toString(), // <-- đảm bảo không bị undefined.toString()
+        id: realId.toString(),
         productName: item.productName,
 
+        // 👇 Đã sửa lại logic ảnh để trỏ về Server
         imgUrl:
           item.image && item.image.startsWith("http")
             ? item.image
-            : `http://localhost:8080/images/${item.image}`,
+            : `${IMAGE_BASE_URL}${item.image}`,
 
         category: item.category?.name?.toLowerCase() || "other",
         price: item.price,
@@ -53,10 +55,11 @@ export const fetchProductById = async (id) => {
       id: realId.toString(),
       productName: item.productName,
 
+      // 👇 Đã sửa lại logic ảnh để trỏ về Server
       imgUrl:
         item.image && item.image.startsWith("http")
           ? item.image
-          : `http://localhost:8080/images/${item.image}`,
+          : `${IMAGE_BASE_URL}${item.image}`,
 
       category: item.category?.name?.toLowerCase() || "other",
       price: item.price,

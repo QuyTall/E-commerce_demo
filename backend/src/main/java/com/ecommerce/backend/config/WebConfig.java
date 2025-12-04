@@ -14,11 +14,15 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") // Áp dụng cho mọi API
-                        // 👇 SỬA THÀNH DẤU SAO (*): Chấp nhận mọi cổng (3000, 3001, 3002...)
-                        .allowedOrigins("*") 
+                        .allowedOrigins(
+                            "http://localhost:3000",       // Cho phép chạy test ở máy bạn
+                            "http://localhost:3001",
+                            "http://100.26.182.209:3000",  // 👇 Cho phép Client trên Server
+                            "http://100.26.182.209:3001"   // 👇 Cho phép Admin trên Server
+                        )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*");
-                        // .allowCredentials(true); // ⚠️ Tạm thời comment dòng này lại khi dùng "*"
+                        .allowedHeaders("*")
+                        .allowCredentials(true); // Có thể bật true khi đã chỉ định rõ domain
             }
         };
     }
