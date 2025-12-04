@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # 1. Database
+  mysql_db:
+    image: mysql:8.0
+    container_name: ecommerce_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ecommercedb
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # 2. Backend API
+  backend:
+    build: ./backend
+    container_name: ecommerce_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql_db
+    environment:
+      # Kết nối tới container mysql_db chứ không phải localhost
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql_db:3306/ecommercedb?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  # 3. Client (Khách hàng)
+  client:
+    build: ./client
+    container_name: ecommerce_client
+    ports:
+      - "3000:80" # Map cổng 80 của Nginx ra 3002 của máy thật
+    depends_on:
+      - backend
+
+  # 4. Admin (Quản trị)
+  admin:
+    build: ./admin-simple
+    container_name: ecommerce_admin
+    ports:
+      - "3001:80" # Map cổng 80 của Nginx ra 3001
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
