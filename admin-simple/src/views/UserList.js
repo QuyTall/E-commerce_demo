@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Card, Table, Container, Row, Col, Button, Form, Badge } from "react-bootstrap";
 import axios from "axios";
 
+// 👇 KHAI BÁO IP SERVER
+const API_BASE_URL = "http://100.26.182.209:8080/api";
+
 function UserList() {
   const [users, setUsers] = useState([]);
 
@@ -10,20 +13,21 @@ function UserList() {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
+  // Load danh sách user (Đã sửa IP)
   const loadUsers = () => {
-    axios.get("http://localhost:8080/api/admin/users", getAuthConfig())
-      .then((res) => setUsers(res.data.data))
+    axios.get(`${API_BASE_URL}/admin/users`, getAuthConfig())
+      .then((res) => setUsers(res.data.data || res.data)) // Fix nhẹ phòng trường hợp backend trả về khác format
       .catch((err) => console.error("Lỗi load users:", err));
   };
 
   useEffect(() => { loadUsers(); }, []);
 
-  // Hàm thay đổi quyền
+  // Hàm thay đổi quyền (Đã sửa IP)
   const handleChangeRole = async (id, newRole) => {
       if(!window.confirm(`Bạn muốn đổi quyền user này thành ${newRole}?`)) return;
       
       try {
-          await axios.put(`http://localhost:8080/api/admin/users/${id}/role`, { role: newRole }, getAuthConfig());
+          await axios.put(`${API_BASE_URL}/admin/users/${id}/role`, { role: newRole }, getAuthConfig());
           alert("✅ Cập nhật thành công!");
           loadUsers();
       } catch (err) {
@@ -31,11 +35,11 @@ function UserList() {
       }
   };
 
-  // Hàm xóa user
+  // Hàm xóa user (Đã sửa IP)
   const handleDelete = async (id) => {
       if(!window.confirm("Xóa vĩnh viễn user này?")) return;
       try {
-          await axios.delete(`http://localhost:8080/api/admin/users/${id}`, getAuthConfig());
+          await axios.delete(`${API_BASE_URL}/admin/users/${id}`, getAuthConfig());
           alert("🗑️ Đã xóa!");
           loadUsers();
       } catch (err) {
@@ -71,9 +75,8 @@ function UserList() {
                       <td>{user.username}</td>
                       <td>{user.email}</td>
                       <td>
-                         {/* Logic gợi ý VIP nếu mua nhiều */}
-                         ${user.totalSpent} 
-                         {user.totalSpent > 1000 && <span className="badge badge-warning ml-2">Tiềm năng VIP</span>}
+                         ${user.totalSpent || 0} 
+                         {(user.totalSpent > 1000) && <span className="badge badge-warning ml-2">Tiềm năng VIP</span>}
                       </td>
                       <td>
                         <Form.Control 

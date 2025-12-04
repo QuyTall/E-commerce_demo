@@ -2,10 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Card, Table, Container, Row, Col, Form, Button } from "react-bootstrap";
 import axios from "axios";
 
+// 👇 KHAI BÁO IP SERVER
+const API_BASE_URL = "http://100.26.182.209:8080/api";
+
 function TableList() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [categoryFilter, setCategoryFilter] = useState("ALL"); // Bộ lọc
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
@@ -22,12 +25,12 @@ function TableList() {
     }
   });
 
-  // 1. LOAD DỮ LIỆU
+  // 1. LOAD DỮ LIỆU (Đã sửa IP)
   const loadProducts = () => {
-    axios.get("http://localhost:8080/api/products")
+    axios.get(`${API_BASE_URL}/products`)
       .then((res) => {
         setProducts(res.data);
-        setFilteredProducts(res.data); // Mặc định hiển thị hết
+        setFilteredProducts(res.data); 
       })
       .catch((err) => console.error("Lỗi load:", err));
   };
@@ -44,7 +47,7 @@ function TableList() {
   }, [categoryFilter, products]);
 
 
-  // 3. CÁC HÀM XỬ LÝ FORM (Giữ nguyên logic cũ, chỉ thêm category)
+  // 3. CÁC HÀM XỬ LÝ FORM (Đã sửa IP)
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSave = async (e) => {
@@ -57,10 +60,10 @@ function TableList() {
 
     try {
         if (isEditing) {
-            await axios.put(`http://localhost:8080/api/products/${currentId}`, payload, getAuthConfig());
+            await axios.put(`${API_BASE_URL}/products/${currentId}`, payload, getAuthConfig());
             alert("✅ Cập nhật thành công!");
         } else {
-            await axios.post("http://localhost:8080/api/products", payload, getAuthConfig());
+            await axios.post(`${API_BASE_URL}/products`, payload, getAuthConfig());
             alert("✅ Thêm mới thành công!");
         }
         resetForm();
@@ -73,7 +76,7 @@ function TableList() {
   const handleDelete = async (id) => {
     if (!window.confirm("Xóa sản phẩm này?")) return;
     try {
-        await axios.delete(`http://localhost:8080/api/products/${id}`, getAuthConfig());
+        await axios.delete(`${API_BASE_URL}/products/${id}`, getAuthConfig());
         alert("🗑️ Đã xóa!");
         loadProducts();
     } catch (err) {
@@ -115,7 +118,6 @@ function TableList() {
                 <Row>
                   <Col md="4"><Form.Group><label>Thương hiệu</label><Form.Control name="brand" value={formData.brand} onChange={handleChange} /></Form.Group></Col>
                   
-                  {/* 🔥 Ô NHẬP CATEGORY (Quan trọng để phân loại) */}
                   <Col md="4">
                     <Form.Group>
                         <label>Danh mục (Áo, Quần, Giày...)</label>
@@ -141,8 +143,6 @@ function TableList() {
             <Card.Header>
                 <div className="d-flex justify-content-between align-items-center">
                     <Card.Title as="h4">Kho Hàng</Card.Title>
-                    
-                    {/* 🔥 BỘ LỌC SẢN PHẨM */}
                     <Form.Control 
                         as="select" 
                         style={{width: "200px"}} 
@@ -163,9 +163,9 @@ function TableList() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Ảnh</th> {/* 🔥 Cột Ảnh Mới */}
+                    <th>Ảnh</th>
                     <th>Tên</th>
-                    <th>Danh mục</th> {/* 🔥 Cột Danh Mục Mới */}
+                    <th>Danh mục</th>
                     <th>Giá</th>
                     <th>Kho</th>
                     <th>Thao tác</th>
@@ -175,8 +175,6 @@ function TableList() {
                   {filteredProducts.map((item) => (
                     <tr key={item.id}>
                       <td>{item.id}</td>
-                      
-                      {/* 🔥 HIỂN THỊ ẢNH THUMBNAIL */}
                       <td>
                         <img 
                             src={item.image} 
@@ -188,16 +186,12 @@ function TableList() {
                             onError={(e) => e.target.src = "https://via.placeholder.com/50"}
                         />
                       </td>
-
                       <td>{item.name}</td>
-                      
-                      {/* 🔥 HIỂN THỊ DANH MỤC */}
                       <td>
                           <span className="badge badge-info" style={{padding: "5px 10px", fontSize: "12px"}}>
                               {item.category || "Chưa phân loại"}
                           </span>
                       </td>
-
                       <td>${item.price}</td>
                       <td>{item.stock}</td>
                       <td>

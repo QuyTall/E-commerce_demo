@@ -2,14 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Card, Table, Container, Row, Col, Button, Badge } from "react-bootstrap";
 import axios from "axios";
 
+// 👇 KHAI BÁO IP SERVER
+const API_BASE_URL = "http://100.26.182.209:8080/api";
+
 function Orders() {
   const [orders, setOrders] = useState([]);
   const token = localStorage.getItem("token");
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
-  // Load đơn hàng
+  // Load đơn hàng (Đã sửa IP)
   const loadOrders = () => {
-    axios.get("http://localhost:8080/api/orders", config)
+    axios.get(`${API_BASE_URL}/orders`, config)
       .then(res => setOrders(res.data))
       .catch(err => console.error(err));
   };
@@ -18,15 +21,13 @@ function Orders() {
     loadOrders();
   }, []);
 
-  // Duyệt đơn (Chuyển thành SHIPPED)
+  // Duyệt đơn (Đã sửa IP)
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      // Gọi API: PUT /api/orders/{id}
-      // Body: { "status": "SHIPPED" }
-      await axios.put(`http://localhost:8080/api/orders/${orderId}`, { status: newStatus }, config);
+      await axios.put(`${API_BASE_URL}/orders/${orderId}`, { status: newStatus }, config);
       
       alert("Cập nhật trạng thái thành công!");
-      loadOrders(); // Cập nhật lại danh sách đơn hàng
+      loadOrders(); 
     } catch (error) {
       console.error("Lỗi cập nhật:", error);
       alert("Cập nhật thất bại!");
@@ -50,7 +51,7 @@ function Orders() {
                     <th>SĐT</th>
                     <th>Địa Chỉ</th>
                     <th>Tổng Tiền</th>
-                    <th>Ngày Đặt</th>
+                    {/* <th>Ngày Đặt</th> */ }
                     <th>Trạng Thái</th>
                     <th>Hành Động</th>
                   </tr>
@@ -63,6 +64,7 @@ function Orders() {
                       <td>{order.phone}</td>
                       <td>{order.address}</td>
                       <td>${order.totalPrice}</td>
+                      {/* <td>{order.orderDate}</td> */}
                       <td>
                         {order.status === "PENDING" ? 
                           <Badge bg="warning" text="dark">Chờ xử lý</Badge> : 
